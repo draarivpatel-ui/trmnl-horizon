@@ -1,0 +1,44 @@
+<div class="view view--full">
+  <div class="layout layout--col gap--space-between">
+    <div class="grid grid--cols-2">
+      <div class="item">
+        <div class="meta"><span class="index">ORBIT</span></div>
+        <div class="content">
+          <span class="title title--small">{{ target_sat | default: "ISS (ZARYA) // NORAD 25544" }}</span>
+          <span class="description">MAX EL: {{ max_elevation_deg | default: "74.2" }}° // AOS AZ: {{ aos_azimuth_deg | default: "228" }}°</span>
+          <div class="flex gap--small">
+            <span class="label label--small label--inverted">DOWNLINK {{ downlink_mhz | default: "145.800 FM / 437.800 PKT" }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="item">
+        <div class="meta"><span class="index">SOLAR</span></div>
+        <div class="content">
+          <span class="value value--medium value--tnums">{{ sun_sunrise | default: "06:36" }} / {{ sun_sunset | default: "16:52" }}</span>
+          <span class="label label--small">F10.7 FLUX: {{ solar_flux | default: "164" }} // KP: {{ kp_index | default: "2.3" }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <table class="table">
+      <thead>
+        <tr><th>SATELLITE</th><th>AOS UTC</th><th>DURATION</th><th>MAX EL</th><th>MODE</th></tr>
+      </thead>
+      <tbody>
+        {% for pass in upcoming_passes %}
+        <tr>
+          <td><span class="label label--small">{{ pass.sat }}</span></td>
+          <td><span class="value value--xxsmall value--tnums">{{ pass.aos }}</span></td>
+          <td><span class="description">{{ pass.dur }}</span></td>
+          <td><span class="label label--small label--inverted">{{ pass.maxEl }}</span></td>
+          <td><span class="description">{{ pass.mode }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="title_bar">
+    <span class="title">TRMNL Horizon // Orbital Ephemeris</span>
+    <span class="instance">{{ station_callsign | default: "GS-40N // HORIZON TRACKING ARRAY" }}</span>
+  </div>
+</div>

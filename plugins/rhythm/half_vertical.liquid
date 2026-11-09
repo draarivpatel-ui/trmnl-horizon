@@ -1,0 +1,23 @@
+<div class="view view--half_vertical">
+  <div class="layout layout--col gap--space-between">
+    <div class="item">
+      <div class="meta"><span class="index">RAGA</span></div>
+      <div class="content">
+        <span class="title title--small">{{ raga_name | default: "RAGA YAMAN (KALYAN THAAT)" }}</span>
+        <span class="description">AROHA: {{ aroha | default: "N. R G M# D N S'" }} // AVAROHA: {{ avaroha | default: "S' N D P M# G R S" }}</span>
+        <span class="label label--small label--inverted">{{ taal_name | default: "TEENTAAL // 16 MATRA (4+4+4+4)" }} @ {{ bpm | default: "144" }} BPM</span>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="grid grid--cols-4">
+      <div class="item bg--gray-5"><div class="content"><span class="label label--inverted">X (SAM)</span><span class="description">DHA DHIN DHIN DHA</span></div></div>
+      <div class="item"><div class="content"><span class="label">2 (TALI)</span><span class="description">DHA DHIN DHIN DHA</span></div></div>
+      <div class="item bg--gray-5"><div class="content"><span class="label">0 (KHALI)</span><span class="description">DHA TIN TIN TA</span></div></div>
+      <div class="item"><div class="content"><span class="label">3 (TALI)</span><span class="description">TA DHIN DHIN DHA</span></div></div>
+    </div>
+  </div>
+  <div class="title_bar">
+    <span class="title">TRMNL Horizon // Classical Riyaz Almanac</span>
+    <span class="instance">Streak: {{ streak_days | default: "24" }} Days</span>
+  </div>
+</div>

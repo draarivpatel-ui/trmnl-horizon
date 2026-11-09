@@ -1,0 +1,32 @@
+{
+  "name": "trmnl-horizon",
+  "version": "1.0.0",
+  "description": "Self-Hosted TRMNL BYOS Server, 800x480 1-Bit E-Paper Dithering Engine, and Native Liquid Plugin Workbench",
+  "main": "trmnl_engine.js",
+  "bin": {
+    "trmnl-horizon": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "trmnl",
+    "e-paper",
+    "e-ink",
+    "byos",
+    "esp32-c3",
+    "dithering",
+    "atkinson",
+    "floyd-steinberg",
+    "bmp",
+    "liquid"
+  ],
+  "author": "draarivpatel-ui <287273626+draarivpatel-ui@users.noreply.github.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/draarivpatel-ui/trmnl-horizon.git"
+  },
+  "homepage": "https://aariv.me/trmnl-horizon/"
+}

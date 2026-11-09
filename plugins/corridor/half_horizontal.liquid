@@ -1,0 +1,41 @@
+<div class="view view--half_horizontal">
+  <div class="layout layout--col gap--space-between">
+    <div class="grid grid--cols-2">
+      <div class="item">
+        <div class="meta"><span class="index">STATION</span></div>
+        <div class="content">
+          <span class="title title--small">{{ station_name | default: "PENN CORRIDOR // NORTH CONCOURSE" }}</span>
+          <span class="description">{{ active_alerts | default: "SIG-LOCK CLEAR // TRACK 4 HIGH-DENSITY BOARDING" }}</span>
+        </div>
+      </div>
+      <div class="item">
+        <div class="meta"><span class="index">HEADWAY</span></div>
+        <div class="content">
+          <span class="value value--medium value--tnums">{{ headway_adherence_pct | default: "94" }}%</span>
+          <span class="label label--small label--inverted">UPDATED {{ updated_at | default: "08:42:15 EST" }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <table class="table">
+      <thead>
+        <tr><th>LINE</th><th>DESTINATION</th><th>TRK</th><th>STATUS</th><th>ETA</th></tr>
+      </thead>
+      <tbody>
+        {% for dep in departures %}
+        <tr>
+          <td><span class="label label--small label--inverted">{{ dep.line }}</span></td>
+          <td><span class="title title--xxsmall">{{ dep.dest }}</span></td>
+          <td><span class="value value--xxsmall value--tnums">{{ dep.track }}</span></td>
+          <td><span class="label label--small">{{ dep.status }}</span></td>
+          <td><span class="value value--xxsmall value--tnums">{{ dep.etaMin }}m</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="title_bar">
+    <span class="title">TRMNL Horizon // Corridor Dispatch</span>
+    <span class="instance">{{ station_code | default: "NYP-N4" }}</span>
+  </div>
+</div>

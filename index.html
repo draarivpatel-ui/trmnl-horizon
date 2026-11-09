@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRMNL-Horizon // Self-Hosted BYOS Server &amp; 800x480 1-Bit E-Paper Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="hardware-tag">TRMNL // 7.5" EPD 800x480</span>
+      <div>
+        <h1>TRMNL-HORIZON</h1>
+        <p class="subtitle">Self-Hosted BYOS Firmware Server, 1-Bit Dithering Engine &amp; Liquid Plugin Workbench</p>
+      </div>
+    </div>
+    <div class="topbar-metrics">
+      <div class="metric-pill">
+        <span class="metric-label">FRAMEBUFFER</span>
+        <span class="metric-value" id="metricResolution">800 x 480 (1-Bit)</span>
+      </div>
+      <div class="metric-pill">
+        <span class="metric-label">BMP PAYLOAD</span>
+        <span class="metric-value" id="metricBmpSize">48,062 Bytes</span>
+      </div>
+      <div class="metric-pill">
+        <span class="metric-label">INK COVERAGE</span>
+        <span class="metric-value" id="metricInkRatio">24.8% Black</span>
+      </div>
+      <div class="metric-pill">
+        <span class="metric-label">EST. BATTERY</span>
+        <span class="metric-value" id="metricBatteryDays">142 Days</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="workbench-grid">
+    <!-- Left Column: Physical TRMNL 7.5" E-Paper Hardware Bezel & Screen Selector -->
+    <section class="bezel-column">
+      <div class="panel-header-row">
+        <div class="screen-tabs" role="tablist" aria-label="TRMNL E-Ink Screen Presets">
+          <button class="screen-tab active" data-screen="corridor" role="tab" aria-selected="true">01 // Corridor Dispatch</button>
+          <button class="screen-tab" data-screen="orbital" role="tab" aria-selected="false">02 // Orbital Ephemeris</button>
+          <button class="screen-tab" data-screen="labbench" role="tab" aria-selected="false">03 // Lab Bench Telemetry</button>
+          <button class="screen-tab" data-screen="rhythm" role="tab" aria-selected="false">04 // Rhythm Almanac</button>
+        </div>
+        <div class="refresh-controls">
+          <button id="btnLutFlash" class="btn btn-secondary" title="Simulate UC8179 E-Paper Full Waveform Inversion Refresh">LUT Flash Refresh</button>
+          <button id="btnDownloadBmp" class="btn btn-primary">Download 1-Bit .BMP (48 KB)</button>
+          <button id="btnDownloadPng" class="btn btn-secondary">Export .PNG</button>
+        </div>
+      </div>
+
+      <!-- Physical TRMNL Enclosure Simulation -->
+      <div class="trmnl-enclosure" id="trmnlEnclosure">
+        <div class="bezel-screw screw-tl"></div>
+        <div class="bezel-screw screw-tr"></div>
+        <div class="bezel-screw screw-bl"></div>
+        <div class="bezel-screw screw-br"></div>
+
+        <div class="bezel-top-strip">
+          <span class="bezel-model">TRMNL OG // ESP32-C3 + UC8179 7.5" MONOCHROME EPD</span>
+          <span class="bezel-led-group">
+            <span class="status-led" id="wakeLed"></span>
+            <span id="bezelStatusText">DEEP SLEEP (18 uA)</span>
+          </span>
+        </div>
+
+        <div class="epaper-viewport" id="epaperViewport">
+          <canvas id="epaperCanvas" width="800" height="480" aria-label="TRMNL 800x480 E-Paper Display Preview"></canvas>
+          <div class="lut-flash-overlay" id="lutFlashOverlay"></div>
+        </div>
+
+        <div class="bezel-bottom-strip">
+          <div class="bezel-brand-mark">TRMNL // BYOS HORIZON EDITION</div>
+          <div class="bezel-actions">
+            <label class="file-upload-label" for="customImageInput">Load Custom Image to Dither</label>
+            <input type="file" id="customImageInput" accept="image/*" hidden />
+            <button id="btnWakePoll" class="bezel-wake-btn">Simulate Wake &amp; Poll /api/display</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Screen Payload Customizer + BYOS Protocol Inspector -->
+      <div class="dual-subpanels">
+        <div class="card-panel">
+          <div class="card-title-row">
+            <h2>Live Screen Parameter Override</h2>
+            <span class="badge-tag" id="activeScreenBadge">corridor</span>
+          </div>
+          <div class="form-grid">
+            <label>
+              <span>Headline / Station / Callsign</span>
+              <input type="text" id="inputHeadline" value="PENN CORRIDOR // NORTH CONCOURSE" />
+            </label>
+            <label>
+              <span>Advisory / Subtitle / Raga Aroha</span>
+              <input type="text" id="inputAdvisory" value="SIG-LOCK CLEAR // TRACK 4 HIGH-DENSITY BOARDING" />
+            </label>
+            <label>
+              <span>Primary Metric (Adherence % / Max El / BPM)</span>
+              <input type="number" id="inputMetricValue" value="94" min="1" max="240" />
+            </label>
+          </div>
+        </div>
+
+        <div class="card-panel">
+          <div class="card-title-row">
+            <h2>BYOS Firmware Protocol Inspector</h2>
+            <div class="protocol-tabs">
+              <button class="proto-tab active" data-endpoint="display">GET /api/display</button>
+              <button class="proto-tab" data-endpoint="setup">GET /api/setup</button>
+              <button class="proto-tab" data-endpoint="log">POST /api/log</button>
+            </div>
+          </div>
+          <pre class="code-box" id="protocolInspectorBox"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Dithering Engine, Battery Physics Calculator & Liquid Template Exporter -->
+    <aside class="controls-column">
+      <!-- 1. Dithering Pipeline Card -->
+      <div class="card-panel">
+        <div class="card-title-row">
+          <h2>1-Bit E-Paper Dithering Pipeline</h2>
+          <span class="badge-tag">UC8179 LUT</span>
+        </div>
+        <div class="dither-selector" id="ditherSelector">
+          <button class="dither-btn active" data-dither="atkinson">
+            <strong>Atkinson</strong>
+            <span>Classic Mac 6/8 Crisp Contrast</span>
+          </button>
+          <button class="dither-btn" data-dither="floyd-steinberg">
+            <strong>Floyd-Steinberg</strong>
+            <span>16-Part Smooth Error Diffusion</span>
+          </button>
+          <button class="dither-btn" data-dither="bayer4">
+            <strong>Bayer 4x4</strong>
+            <span>Ordered Cross-Hatch Matrix</span>
+          </button>
+          <button class="dither-btn" data-dither="bayer8">
+            <strong>Bayer 8x8</strong>
+            <span>64-Level Halftone Newspaper</span>
+          </button>
+          <button class="dither-btn" data-dither="gray2bit">
+            <strong>2-Bit Grayscale</strong>
+            <span>4-Level LUT Preview</span>
+          </button>
+          <button class="dither-btn" data-dither="threshold">
+            <strong>1-Bit Threshold</strong>
+            <span>Hard Binary Cutoff (128)</span>
+          </button>
+        </div>
+        <div class="dither-stats-bar">
+          <div><span>White Pixels:</span> <strong id="statWhitePx">288,768</strong></div>
+          <div><span>Black Pixels:</span> <strong id="statBlackPx">95,232</strong></div>
+          <div><span>Render Time:</span> <strong id="statRenderMs">4.2 ms</strong></div>
+        </div>
+      </div>
+
+      <!-- 2. ESP32-C3 + 1800mAh LiPo Battery Physics Estimator -->
+      <div class="card-panel">
+        <div class="card-title-row">
+          <h2>ESP32-C3 Power &amp; Battery Physics</h2>
+          <span class="badge-tag" id="socBadge">89% SoC</span>
+        </div>
+        <div class="slider-group">
+          <label>
+            <div class="slider-label-row">
+              <span>Refresh Interval (`Refresh-Rate` Header)</span>
+              <strong id="valRefreshSec">300 s (5 min)</strong>
+            </div>
+            <input type="range" id="sliderRefresh" min="60" max="3600" step="60" value="300" />
+          </label>
+          <label>
+            <div class="slider-label-row">
+              <span>LiPo Cell Voltage (`Battery-Voltage` Header)</span>
+              <strong id="valBatteryV">4.04 V</strong>
+            </div>
+            <input type="range" id="sliderVoltage" min="3.25" max="4.20" step="0.01" value="4.04" />
+          </label>
+          <label>
+            <div class="slider-label-row">
+              <span>Wi-Fi Signal Strength (`RSSI` Header)</span>
+              <strong id="valRssi">-58 dBm</strong>
+            </div>
+            <input type="range" id="sliderRssi" min="-88" max="-42" step="1" value="-58" />
+          </label>
+          <label>
+            <div class="slider-label-row">
+              <span>Battery Pack Capacity</span>
+              <strong id="valCapacity">1800 mAh</strong>
+            </div>
+            <select id="selectBatteryCap">
+              <option value="1800" selected>1800 mAh (TRMNL Standard LiPo)</option>
+              <option value="2500">2500 mAh (TRMNL Extended LiPo)</option>
+              <option value="1200">1200 mAh (Slim Custom Enclosure)</option>
+            </select>
+          </label>
+        </div>
+        <div class="power-telemetry-grid">
+          <div class="power-stat">
+            <span>Wakes / Day</span>
+            <strong id="powerWakesDay">288.0</strong>
+          </div>
+          <div class="power-stat">
+            <span>Wake Burst</span>
+            <strong id="powerBurstSec">4.68 s</strong>
+          </div>
+          <div class="power-stat">
+            <span>Daily Draw</span>
+            <strong id="powerMahDay">29.61 mAh</strong>
+          </div>
+          <div class="power-stat">
+            <span>Remaining Life</span>
+            <strong id="powerDaysLeft">49 Days</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Native TRMNL .liquid Plugin Markup Exporter -->
+      <div class="card-panel">
+        <div class="card-title-row">
+          <h2>TRMNL Native `.liquid` Exporter</h2>
+          <select id="selectLiquidView" aria-label="TRMNL View Layout Size">
+            <option value="full">full.liquid (800x480)</option>
+            <option value="half_horizontal">half_horizontal.liquid (800x240)</option>
+            <option value="half_vertical">half_vertical.liquid (400x480)</option>
+            <option value="quadrant">quadrant.liquid (400x240)</option>
+          </select>
+        </div>
+        <textarea id="liquidCodeOutput" class="liquid-textarea" readonly rows="9"></textarea>
+        <div class="liquid-action-row">
+          <button id="btnCopyLiquid" class="btn btn-secondary">Copy .liquid Markup</button>
+          <button id="btnDownloadLiquid" class="btn btn-primary">Download .liquid File</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="trmnl_engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

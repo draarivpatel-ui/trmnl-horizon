@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: "TRMNL-Horizon: Self-Hosted TRMNL BYOS Server and 800x480 1-Bit E-Paper Dithering Engine"
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+authors:
+  - alias: draarivpatel-ui
+    name: "draarivpatel-ui"
+repository-code: "https://github.com/draarivpatel-ui/trmnl-horizon"
+url: "https://aariv.me/trmnl-horizon/"
+license: MIT
+version: 1.0.0
+date-released: "2026-11-08"
+keywords:
+  - trmnl
+  - e-paper
+  - byos
+  - dithering
+  - esp32-c3
