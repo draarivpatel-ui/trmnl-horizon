@@ -665,6 +665,42 @@ test('BYOS Server responds to OPTIONS preflight with 204 No Content', async () =
   }
 });
 
+test('BYOS Server survives malformed Host headers and request targets', async () => {
+  const { server } = createByosServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    const badHost = await httpRequest(port, 'GET', '/api/status', { Host: '[' });
+    assert.equal(badHost.statusCode, 200);
+
+    const badTarget = await httpRequest(port, 'GET', '//');
+    assert.equal(badTarget.statusCode, 400);
+
+    const after = await httpRequest(port, 'GET', '/api/status');
+    assert.equal(after.statusCode, 200);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('BYOS Server does not serve dotfiles such as the .git directory', async () => {
+  const { server } = createByosServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    const res = await httpRequest(port, 'GET', '/.nojekyll');
+    assert.equal(res.statusCode, 403);
+    const nested = await httpRequest(port, 'GET', '/.github/workflows/ci.yml');
+    assert.equal(nested.statusCode, 403);
+    const ok = await httpRequest(port, 'GET', '/style.css');
+    assert.equal(ok.statusCode, 200);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test('handleApiSetup allows custom apiKey override', () => {
   const res = TrmnlEngine.handleApiSetup(
     { ID: '12:34:56:78:9A:BC' },
