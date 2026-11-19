@@ -69,7 +69,16 @@ function createByosServer(options = {}) {
   }
 
   const server = http.createServer((req, res) => {
-    const reqUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    // Only the path and query matter here; the client-controlled Host header
+    // must not be able to make URL parsing throw and take the server down.
+    let reqUrl;
+    try {
+      reqUrl = new URL(req.url || '/', 'http://localhost');
+    } catch (_err) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Bad request' }));
+      return;
+    }
     const pathname = reqUrl.pathname;
 
     // CORS headers for local hardware testing
@@ -208,7 +217,8 @@ function createByosServer(options = {}) {
     const staticRoot = __dirname;
     const relPath = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
     const safePath = path.normalize(path.join(staticRoot, relPath));
-    if (!safePath.startsWith(staticRoot)) {
+    const isHidden = relPath.split('/').some((segment) => segment.startsWith('.'));
+    if (isHidden || (safePath !== staticRoot && !safePath.startsWith(staticRoot + path.sep))) {
       res.writeHead(403);
       res.end('Forbidden');
       return;
