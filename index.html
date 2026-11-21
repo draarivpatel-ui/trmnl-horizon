@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TRMNL-Horizon // Self-Hosted BYOS Server &amp; 800x480 1-Bit E-Paper Studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%231b1c1f'/%3E%3Crect x='2' y='2' width='12' height='9' fill='%23ece8de'/%3E%3Crect x='3' y='3' width='4' height='1' fill='%23111214'/%3E%3Crect x='3' y='5' width='7' height='1' fill='%23111214'/%3E%3Crect x='3' y='7' width='5' height='1' fill='%23111214'/%3E%3Crect x='2' y='12' width='3' height='2' fill='%23e85d26'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet" />
@@ -29,11 +30,11 @@
       </div>
       <div class="metric-pill">
         <span class="metric-label">INK COVERAGE</span>
-        <span class="metric-value" id="metricInkRatio">24.8% Black</span>
+        <span class="metric-value" id="metricInkRatio">25.8% Black</span>
       </div>
       <div class="metric-pill">
         <span class="metric-label">EST. BATTERY</span>
-        <span class="metric-value" id="metricBatteryDays">142 Days</span>
+        <span class="metric-value" id="metricBatteryDays">46 Days (84%)</span>
       </div>
     </div>
   </header>
@@ -157,8 +158,8 @@
           </button>
         </div>
         <div class="dither-stats-bar">
-          <div><span>White Pixels:</span> <strong id="statWhitePx">288,768</strong></div>
-          <div><span>Black Pixels:</span> <strong id="statBlackPx">95,232</strong></div>
+          <div><span>White Pixels:</span> <strong id="statWhitePx">285,052</strong></div>
+          <div><span>Black Pixels:</span> <strong id="statBlackPx">98,948</strong></div>
           <div><span>Render Time:</span> <strong id="statRenderMs">4.2 ms</strong></div>
         </div>
       </div>
@@ -167,7 +168,7 @@
       <div class="card-panel">
         <div class="card-title-row">
           <h2>ESP32-C3 Power &amp; Battery Physics</h2>
-          <span class="badge-tag" id="socBadge">89% SoC</span>
+          <span class="badge-tag" id="socBadge">84% SoC</span>
         </div>
         <div class="slider-group">
           <label>
@@ -214,11 +215,11 @@
           </div>
           <div class="power-stat">
             <span>Daily Draw</span>
-            <strong id="powerMahDay">29.61 mAh</strong>
+            <strong id="powerMahDay">29.63 mAh</strong>
           </div>
           <div class="power-stat">
             <span>Remaining Life</span>
-            <strong id="powerDaysLeft">49 Days</strong>
+            <strong id="powerDaysLeft">46 Days</strong>
           </div>
         </div>
       </div>

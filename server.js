@@ -42,15 +42,27 @@ function createByosServer(options = {}) {
     logs: []
   };
 
+  // Host is attacker-controlled: only a syntactically valid hostname or [IPv6]
+  // literal (with optional port) may seed a URL base, or `new URL` throws and
+  // kills the request handler.
+  function safeHostHeader(req) {
+    const host = String(req.headers.host || '');
+    return /^(\[[0-9a-fA-F:]+\]|[\w.-]+)(:\d{1,5})?$/.test(host) ? host : 'localhost';
+  }
+
   function getBaseUrl(req) {
     if (options.baseUrl) return options.baseUrl.replace(/\/+$/, '');
-    const host = req.headers.host || 'localhost:8080';
+    const host = safeHostHeader(req) || 'localhost:8080';
     const proto = req.headers['x-forwarded-proto'] || 'http';
     return `${proto}://${host}`;
   }
 
   function recordDeviceSeen(headers, endpoint) {
     const parsed = TrmnlEngine.parseTrmnlHeaders(headers);
+    if (!state.devices.has(parsed.mac) && state.devices.size >= 256) {
+      // Unbounded registry is a memory-growth vector on hostile networks: evict oldest.
+      state.devices.delete(state.devices.keys().next().value);
+    }
     const prev = state.devices.get(parsed.mac) || { polls: 0 };
     const updated = {
       mac: parsed.mac,
@@ -69,7 +81,7 @@ function createByosServer(options = {}) {
   }
 
   const server = http.createServer((req, res) => {
-    const reqUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    const reqUrl = new URL(req.url || '/', `http://${safeHostHeader(req)}`);
     const pathname = reqUrl.pathname;
 
     // CORS headers for local hardware testing
@@ -122,11 +134,24 @@ function createByosServer(options = {}) {
     if (req.method === 'POST' && pathname === '/api/log') {
       recordDeviceSeen(req.headers, '/api/log');
       let bodyText = '';
+      let bodyBytes = 0;
+      let tooLarge = false;
       req.on('data', (chunk) => {
+        if (tooLarge) return;
+        bodyBytes += chunk.length; // byte length, not UTF-16 chars
+        if (bodyBytes > 262144) {
+          tooLarge = true;
+          res.writeHead(413, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Connection': 'close'
+          });
+          res.end(JSON.stringify({ error: 'Payload too large', limit: 262144 }));
+          return;
+        }
         bodyText += chunk;
-        if (bodyText.length > 262144) req.destroy();
       });
       req.on('end', () => {
+        if (tooLarge) return;
         let parsedBody = {};
         try {
           parsedBody = bodyText ? JSON.parse(bodyText) : {};
@@ -143,7 +168,7 @@ function createByosServer(options = {}) {
     // 4. 1-Bit Packed BMP / Grayscale PNG Image Endpoint: GET /api/bitmap/:filename
     if (req.method === 'GET' && pathname.startsWith('/api/bitmap/')) {
       const filename = path.basename(pathname);
-      const isPng = filename.endsWith('.png');
+      const isPng = /\.png$/i.test(filename);
       let screenId = reqUrl.searchParams.get('screen') || state.activeScreen;
       let ditherMode = reqUrl.searchParams.get('dither') || state.ditherMode;
 
@@ -204,23 +229,30 @@ function createByosServer(options = {}) {
       return;
     }
 
-    // 7. Static files for Interactive Workbench UI
-    const staticRoot = __dirname;
-    const relPath = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
-    const safePath = path.normalize(path.join(staticRoot, relPath));
-    if (!safePath.startsWith(staticRoot)) {
-      res.writeHead(403);
-      res.end('Forbidden');
+    // 7. Static files for Interactive Workbench UI: explicit allowlist only.
+    // Serving the repo root raw exposed .git/ (VCS internals, remotes), source
+    // and any file dropped in later; only the four workbench files are public.
+    const STATIC_FILES = {
+      '/': 'index.html',
+      '/index.html': 'index.html',
+      '/style.css': 'style.css',
+      '/app.js': 'app.js',
+      '/trmnl_engine.js': 'trmnl_engine.js'
+    };
+    const staticName = STATIC_FILES[pathname];
+    if (!staticName) {
+      res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Not found', path: pathname }));
       return;
     }
 
-    fs.readFile(safePath, (err, content) => {
+    fs.readFile(path.join(__dirname, staticName), (err, content) => {
       if (err) {
         res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: 'Not found', path: pathname }));
         return;
       }
-      const ext = path.extname(safePath).toLowerCase();
+      const ext = path.extname(staticName).toLowerCase();
       res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
       res.end(content);
     });

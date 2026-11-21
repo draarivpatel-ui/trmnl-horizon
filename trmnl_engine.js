@@ -383,6 +383,26 @@
   // 2. E-PAPER DITHERING PIPELINE (Atkinson, Floyd-Steinberg, Bayer, Threshold)
   // ============================================================================
 
+  // Undersized or non-finite input used to corrupt output silently (undefined
+  // pixels read as white, NaN quantized differently per level). Fail loud.
+  function assertGrayBuffer(grayPixels, width, height) {
+    if (!grayPixels || typeof grayPixels.length !== 'number') {
+      throw new TypeError('grayPixels must be an array-like pixel buffer');
+    }
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) {
+      throw new RangeError(`width/height must be positive integers, got ${width}x${height}`);
+    }
+    const need = width * height;
+    if (grayPixels.length < need) {
+      throw new RangeError(`grayPixels has ${grayPixels.length} pixels, needs ${need}`);
+    }
+    for (let i = 0; i < need; i++) {
+      if (!Number.isFinite(grayPixels[i])) {
+        throw new RangeError(`grayPixels[${i}] is not finite (${grayPixels[i]})`);
+      }
+    }
+  }
+
   function quantizePixel(value, levels = 2) {
     const clamped = Math.max(0, Math.min(255, value));
     if (levels <= 2) {
@@ -396,6 +416,7 @@
    * 1-bit / N-level direct threshold quantization.
    */
   function ditherThreshold(grayPixels, width = DISPLAY_WIDTH, height = DISPLAY_HEIGHT, threshold = 128) {
+    assertGrayBuffer(grayPixels, width, height);
     const out = new Uint8Array(width * height);
     for (let i = 0; i < out.length; i++) {
       out[i] = grayPixels[i] < threshold ? 0 : 255;
@@ -409,6 +430,7 @@
    * [ 3/16 5/16 1/16 ]
    */
   function ditherFloydSteinberg(grayPixels, width = DISPLAY_WIDTH, height = DISPLAY_HEIGHT, levels = 2) {
+    assertGrayBuffer(grayPixels, width, height);
     const work = new Float32Array(grayPixels.length);
     for (let i = 0; i < grayPixels.length; i++) work[i] = grayPixels[i];
     const out = new Uint8Array(width * height);
@@ -439,6 +461,7 @@
    * muddy speckle buildup in near-white or near-black regions.
    */
   function ditherAtkinson(grayPixels, width = DISPLAY_WIDTH, height = DISPLAY_HEIGHT, levels = 2) {
+    assertGrayBuffer(grayPixels, width, height);
     const work = new Float32Array(grayPixels.length);
     for (let i = 0; i < grayPixels.length; i++) work[i] = grayPixels[i];
     const out = new Uint8Array(width * height);
@@ -488,6 +511,7 @@
    * Bayer 4x4 or 8x8 ordered dithering (deterministic cross-hatch halftone patterns).
    */
   function ditherBayer(grayPixels, width = DISPLAY_WIDTH, height = DISPLAY_HEIGHT, matrixSize = 4, levels = 2) {
+    assertGrayBuffer(grayPixels, width, height);
     const use8 = matrixSize === 8;
     const matrix = use8 ? BAYER_8X8 : BAYER_4X4;
     const n = use8 ? 8 : 4;
@@ -845,8 +869,42 @@
     fb.drawText(rightText, 800 - 14 - rw, 461, 1, 0, 1);
   }
 
+  // options.data is library-API user input: a mistyped field (departures as a
+  // string, sunEvents: null) crashed the renderers instead of falling back.
+  function coerceScreenData(d, defaults) {
+    for (const key of Object.keys(defaults)) {
+      const dv = defaults[key];
+      const cv = d[key];
+      if (Array.isArray(dv)) {
+        if (!Array.isArray(cv)) {
+          d[key] = dv;
+        } else if (dv.length && dv[0] && typeof dv[0] === 'object') {
+          // Repair each row against the schema so a stray field or primitive
+          // element cannot crash the renderer.
+          d[key] = cv.map((item) => {
+            if (!item || typeof item !== 'object' || Array.isArray(item)) return dv[0];
+            const row = { ...item };
+            for (const k2 of Object.keys(dv[0])) {
+              if (typeof row[k2] !== typeof dv[0][k2]) row[k2] = dv[0][k2];
+            }
+            return row;
+          });
+        }
+      } else if (dv && typeof dv === 'object') {
+        if (!cv || typeof cv !== 'object' || Array.isArray(cv)) {
+          d[key] = dv;
+        } else {
+          for (const k2 of Object.keys(dv)) {
+            if (typeof cv[k2] !== typeof dv[k2]) cv[k2] = dv[k2];
+          }
+        }
+      }
+    }
+    return d;
+  }
+
   function renderCorridorScreen(fb, customData = {}, telemetry = {}) {
-    const d = Object.assign({}, DEFAULT_SCREEN_DATA.corridor, customData);
+    const d = coerceScreenData(Object.assign({}, DEFAULT_SCREEN_DATA.corridor, customData), DEFAULT_SCREEN_DATA.corridor);
     fb.clear(255);
     drawHeaderBar(
       fb,
@@ -934,7 +992,7 @@
   }
 
   function renderOrbitalScreen(fb, customData = {}, telemetry = {}) {
-    const d = Object.assign({}, DEFAULT_SCREEN_DATA.orbital, customData);
+    const d = coerceScreenData(Object.assign({}, DEFAULT_SCREEN_DATA.orbital, customData), DEFAULT_SCREEN_DATA.orbital);
     fb.clear(255);
     drawHeaderBar(
       fb,
@@ -1073,7 +1131,7 @@
   }
 
   function renderLabBenchScreen(fb, customData = {}, telemetry = {}) {
-    const d = Object.assign({}, DEFAULT_SCREEN_DATA.labbench, customData);
+    const d = coerceScreenData(Object.assign({}, DEFAULT_SCREEN_DATA.labbench, customData), DEFAULT_SCREEN_DATA.labbench);
     fb.clear(255);
     drawHeaderBar(
       fb,
@@ -1109,7 +1167,7 @@
     fb.drawText('4.20V FULL', 448, 210, 1, 0, 1);
     fb.drawText('3.50V NOMINAL', 562, 210, 1, 60, 1);
     fb.drawText('3.20V CUTOFF', 686, 210, 1, 0, 1);
-    fb.drawText('DEEP SLEEP: 18UA // WAKE BURST: 84MA FOR 3.8S', 448, 228, 1, 40, 1);
+    fb.drawText('DEEP SLEEP: 18UA // WAKE BURST: 78MA FOR 4.7S', 448, 228, 1, 40, 1);
 
     // Bottom Left: CI Build Matrix (x=14..420, y=262..440)
     fb.strokeRect(14, 262, 406, 178, 0, 2);
@@ -1148,7 +1206,7 @@
   }
 
   function renderRhythmScreen(fb, customData = {}, telemetry = {}) {
-    const d = Object.assign({}, DEFAULT_SCREEN_DATA.rhythm, customData);
+    const d = coerceScreenData(Object.assign({}, DEFAULT_SCREEN_DATA.rhythm, customData), DEFAULT_SCREEN_DATA.rhythm);
     fb.clear(255);
     drawHeaderBar(
       fb,
@@ -1265,8 +1323,9 @@
     const h = normalizeHeaders(rawHeaders);
     const mac = h['id'] || h['x-trmnl-id'] || 'A0:B7:65:FE:12:9C';
     const accessToken = h['access-token'] || '';
-    const refreshRate = parseInt(h['refresh-rate'] || '300', 10) || 300;
-    const batteryVoltage = parseFloat(h['battery-voltage'] || '4.04') || 4.04;
+    const refreshRate = Math.max(15, Math.min(86400, parseInt(h['refresh-rate'] || '300', 10) || 300));
+    const bvRaw = parseFloat(h['battery-voltage'] || '4.04');
+    const batteryVoltage = Number.isFinite(bvRaw) ? Math.max(0, Math.min(30, bvRaw)) : 4.04;
     const fwVersion = h['fw-version'] || '1.6.8';
     const rssi = parseInt(h['rssi'] || '-58', 10) || -58;
     const userAgent = h['user-agent'] || 'trmnl-display/1.6.8';
@@ -1319,8 +1378,14 @@
   function handleApiDisplay(rawHeaders = {}, options = {}) {
     const parsed = parseTrmnlHeaders(rawHeaders);
     const baseUrl = (options.baseUrl || 'http://localhost:8080').replace(/\/+$/, '');
-    const screenId = options.screenId || 'corridor';
-    const ditherMode = options.ditherMode || 'atkinson';
+    // Query params are reflected into filename/image_url: whitelist them so the
+    // advertised name always matches what /api/bitmap would actually render.
+    const screenId = ['corridor', 'orbital', 'labbench', 'rhythm'].includes(String(options.screenId || '').toLowerCase())
+      ? String(options.screenId).toLowerCase()
+      : 'corridor';
+    const ditherMode = ['atkinson', 'floyd-steinberg', 'fs', 'bayer4', 'bayer-4x4', 'bayer8', 'bayer-8x8', 'gray2bit', '2bit', 'threshold', '1bit'].includes(String(options.ditherMode || '').toLowerCase())
+      ? String(options.ditherMode).toLowerCase()
+      : 'atkinson';
     const refreshRate = options.refreshRate || parsed.refreshRate || 300;
     const epochTag = options.epochTag || 'v1';
     const filename = `horizon-${screenId}-${ditherMode}-${epochTag}.bmp`;
@@ -1428,14 +1493,29 @@
   // 7. TRMNL NATIVE .LIQUID PLUGIN MARKUP GENERATOR
   // ============================================================================
 
+  // Custom data lands inside double-quoted Liquid `default:` literals, so
+  // backslashes and double quotes in user strings must be escaped or the
+  // exported template breaks.
+  function escapeLiquidData(data) {
+    if (Array.isArray(data)) return data.map(escapeLiquidData);
+    if (data && typeof data === 'object') {
+      const out = {};
+      for (const [k, v] of Object.entries(data)) out[k] = escapeLiquidData(v);
+      return out;
+    }
+    return typeof data === 'string' ? data.replace(/\\/g, '\\\\').replace(/"/g, '\\"') : data;
+  }
+
   function generateLiquidTemplate(screenId = 'corridor', viewSize = 'full', customData = {}) {
     const id = String(screenId || 'corridor').toLowerCase();
     const view = ['full', 'half_horizontal', 'half_vertical', 'quadrant'].includes(viewSize)
       ? viewSize
       : 'full';
+    // TRMNL ships per-view markup: smaller panes get fewer list rows.
+    const loopLimit = { full: 5, half_horizontal: 3, half_vertical: 3, quadrant: 2 }[view];
 
     if (id === 'orbital') {
-      const d = Object.assign({}, DEFAULT_SCREEN_DATA.orbital, customData);
+      const d = escapeLiquidData(Object.assign({}, DEFAULT_SCREEN_DATA.orbital, customData));
       return `<div class="view view--${view}">
   <div class="layout layout--col gap--space-between">
     <div class="grid grid--cols-2">
@@ -1463,7 +1543,7 @@
         <tr><th>SATELLITE</th><th>AOS UTC</th><th>DURATION</th><th>MAX EL</th><th>MODE</th></tr>
       </thead>
       <tbody>
-        {% for pass in upcoming_passes %}
+        {% for pass in upcoming_passes limit:${loopLimit} %}
         <tr>
           <td><span class="label label--small">{{ pass.sat }}</span></td>
           <td><span class="value value--xxsmall value--tnums">{{ pass.aos }}</span></td>
@@ -1471,6 +1551,8 @@
           <td><span class="label label--small label--inverted">{{ pass.maxEl }}</span></td>
           <td><span class="description">{{ pass.mode }}</span></td>
         </tr>
+        {% else %}
+        <tr><td colspan="5"><span class="description">NO PASSES IN WINDOW</span></td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -1483,7 +1565,7 @@
     }
 
     if (id === 'labbench') {
-      const d = Object.assign({}, DEFAULT_SCREEN_DATA.labbench, customData);
+      const d = escapeLiquidData(Object.assign({}, DEFAULT_SCREEN_DATA.labbench, customData));
       return `<div class="view view--${view}">
   <div class="layout layout--col gap--space-between">
     <div class="grid grid--cols-2">
@@ -1497,14 +1579,14 @@
       <div class="item">
         <div class="meta"><span class="index">POWER</span></div>
         <div class="content">
-          <span class="value value--medium value--tnums">{{ trmnl.battery_voltage | default: "4.04" }}V</span>
-          <span class="label label--small label--inverted">RSSI {{ trmnl.rssi | default: "-58" }} dBm</span>
+          <span class="value value--medium value--tnums">{{ trmnl.device.percent_charged | default: "84" }}%</span>
+          <span class="label label--small label--inverted">RSSI {{ trmnl.device.wifi_strength | default: "-58" }} dBm</span>
         </div>
       </div>
     </div>
     <div class="divider"></div>
     <div class="grid grid--cols-2">
-      {% for node in nodes %}
+      {% for node in nodes limit:${loopLimit} %}
       <div class="item bg--gray-5">
         <div class="meta"><span class="index">{{ forloop.index }}</span></div>
         <div class="content">
@@ -1512,6 +1594,8 @@
           <span class="description">CPU {{ node.cpu_pct }}% // TEMP {{ node.tempC }}°C // {{ node.status }}</span>
         </div>
       </div>
+      {% else %}
+      <div class="item"><div class="content"><span class="description">NO NODES REPORTING</span></div></div>
       {% endfor %}
     </div>
   </div>
@@ -1523,7 +1607,7 @@
     }
 
     if (id === 'rhythm') {
-      const d = Object.assign({}, DEFAULT_SCREEN_DATA.rhythm, customData);
+      const d = escapeLiquidData(Object.assign({}, DEFAULT_SCREEN_DATA.rhythm, customData));
       return `<div class="view view--${view}">
   <div class="layout layout--col gap--space-between">
     <div class="item">
@@ -1549,7 +1633,7 @@
 </div>`;
     }
 
-    const d = Object.assign({}, DEFAULT_SCREEN_DATA.corridor, customData);
+    const d = escapeLiquidData(Object.assign({}, DEFAULT_SCREEN_DATA.corridor, customData));
     return `<div class="view view--${view}">
   <div class="layout layout--col gap--space-between">
     <div class="grid grid--cols-2">
@@ -1574,7 +1658,7 @@
         <tr><th>LINE</th><th>DESTINATION</th><th>TRK</th><th>STATUS</th><th>ETA</th></tr>
       </thead>
       <tbody>
-        {% for dep in departures %}
+        {% for dep in departures limit:${loopLimit} %}
         <tr>
           <td><span class="label label--small label--inverted">{{ dep.line }}</span></td>
           <td><span class="title title--xxsmall">{{ dep.dest }}</span></td>
@@ -1582,6 +1666,8 @@
           <td><span class="label label--small">{{ dep.status }}</span></td>
           <td><span class="value value--xxsmall value--tnums">{{ dep.etaMin }}m</span></td>
         </tr>
+        {% else %}
+        <tr><td colspan="5"><span class="description">NO DEPARTURES ON THE BOARD</span></td></tr>
         {% endfor %}
       </tbody>
     </table>

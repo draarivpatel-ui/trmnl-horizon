@@ -11,14 +11,14 @@
       <div class="item">
         <div class="meta"><span class="index">POWER</span></div>
         <div class="content">
-          <span class="value value--medium value--tnums">{{ trmnl.battery_voltage | default: "4.04" }}V</span>
-          <span class="label label--small label--inverted">RSSI {{ trmnl.rssi | default: "-58" }} dBm</span>
+          <span class="value value--medium value--tnums">{{ trmnl.device.percent_charged | default: "84" }}%</span>
+          <span class="label label--small label--inverted">RSSI {{ trmnl.device.wifi_strength | default: "-58" }} dBm</span>
         </div>
       </div>
     </div>
     <div class="divider"></div>
     <div class="grid grid--cols-2">
-      {% for node in nodes %}
+      {% for node in nodes limit:2 %}
       <div class="item bg--gray-5">
         <div class="meta"><span class="index">{{ forloop.index }}</span></div>
         <div class="content">
@@ -26,6 +26,8 @@
           <span class="description">CPU {{ node.cpu_pct }}% // TEMP {{ node.tempC }}°C // {{ node.status }}</span>
         </div>
       </div>
+      {% else %}
+      <div class="item"><div class="content"><span class="description">NO NODES REPORTING</span></div></div>
       {% endfor %}
     </div>
   </div>

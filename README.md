@@ -48,7 +48,7 @@
 git clone https://github.com/draarivpatel-ui/trmnl-horizon.git
 cd trmnl-horizon
 
-# Run the 46-test verification suite (Node.js 18+ / 22+, zero npm dependencies required)
+# Run the 58-test verification suite (Node.js 18+ / 22+, zero npm dependencies required)
 node --test
 
 # Start the self-hosted TRMNL BYOS HTTP server & web workbench on port 8080
@@ -76,6 +76,17 @@ curl -sO http://localhost:8080/api/bitmap/horizon-orbital-atkinson-v1.bmp
 
 ---
 
+## Deployment Trust Model
+
+This mirrors the official TRMNL BYOS trust model: endpoints are unauthenticated
+and `Access-Control-Allow-Origin: *` is sent on every response. `ID` and
+`Access-Token` headers are parsed and recorded but never validated, and the
+device `api_key` is derived deterministically from the claimed MAC. Run the
+server on localhost or a trusted LAN only; do not expose it to untrusted
+networks. The static file handler serves only the four workbench files
+(`index.html`, `style.css`, `app.js`, `trmnl_engine.js`). Repo internals such
+as `.git/`, `server.js` and `test.js` are not reachable over HTTP.
+
 ## Repository Structure
 
 ```text
@@ -85,7 +96,7 @@ trmnl-horizon/
 ├── app.js                      # Real-time canvas renderer, LUT flash, BMP/PNG/Liquid exporters
 ├── trmnl_engine.js             # UMD core: framebuffer, dithering, 1-bit BMP/PNG, BYOS handlers
 ├── server.js                   # Zero-dependency Node.js TRMNL BYOS HTTP server
-├── test.js                     # 46 unit & HTTP integration tests (node:test)
+├── test.js                     # 58 unit & HTTP integration tests (node:test)
 └── plugins/                    # Ready-to-paste TRMNL native .liquid plugin templates
     ├── corridor/               # full.liquid, half_horizontal.liquid, half_vertical.liquid, quadrant.liquid
     ├── orbital/

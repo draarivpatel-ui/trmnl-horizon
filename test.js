@@ -712,3 +712,171 @@ test('FONT_5X7 contains all uppercase, lowercase, digits, and punctuation glyphs
     assert.equal(TrmnlEngine.FONT_5X7[ch].length, 5);
   }
 });
+
+test('generateLiquidTemplate escapes quotes and backslashes in custom data defaults', () => {
+  const liquid = TrmnlEngine.generateLiquidTemplate('corridor', 'full', {
+    stationName: 'PENN "NORTH" CONCOURSE',
+    activeAlerts: 'TRACK 4\\5 BOARDING'
+  });
+  assert.ok(liquid.includes('default: "PENN \\"NORTH\\" CONCOURSE"'));
+  assert.ok(liquid.includes('default: "TRACK 4\\\\5 BOARDING"'));
+  const nested = TrmnlEngine.generateLiquidTemplate('orbital', 'full', {
+    sunEvents: { sunrise: '06:1"2', sunset: '18:40' }
+  });
+  assert.ok(nested.includes('default: "06:1\\"2"'));
+});
+
+test('parseTrmnlHeaders clamps refresh rate to a sane range', () => {
+  assert.equal(TrmnlEngine.parseTrmnlHeaders({ 'Refresh-Rate': '-5' }).refreshRate, 15);
+  assert.equal(TrmnlEngine.parseTrmnlHeaders({ 'Refresh-Rate': '999999' }).refreshRate, 86400);
+  assert.equal(TrmnlEngine.parseTrmnlHeaders({ 'Refresh-Rate': 'garbage' }).refreshRate, 300);
+});
+
+test('BYOS Server caps the device registry at 256 entries', async () => {
+  const { server } = createByosServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    for (let i = 0; i < 300; i++) {
+      const mac = `AA:BB:CC:${(i >> 8).toString(16).padStart(2, '0')}:${(i & 0xff).toString(16).padStart(2, '0')}:00`;
+      const res = await httpRequest(port, 'GET', '/api/setup', { 'ID': mac });
+      assert.equal(res.statusCode, 200);
+    }
+    const statusRes = await httpRequest(port, 'GET', '/api/status');
+    const statusJson = JSON.parse(statusRes.buffer.toString('utf8'));
+    assert.ok(statusJson.devices.length <= 256, `expected <=256 devices, got ${statusJson.devices.length}`);
+    assert.equal(statusJson.devices.length, 256);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('BYOS Server survives a malformed Host header without crashing', async () => {
+  const { server } = createByosServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    const bad = await httpRequest(port, 'GET', '/api/status', { 'Host': '::bad::' });
+    assert.equal(bad.statusCode, 200);
+    const ipv6 = await httpRequest(port, 'GET', '/api/setup', {
+      'Host': '[::1]:8080',
+      'ID': 'AA:BB:CC:00:11:22'
+    });
+    assert.equal(ipv6.statusCode, 200);
+    const setup = JSON.parse(ipv6.buffer.toString('utf8'));
+    assert.ok(setup.image_url.startsWith('http://[::1]:8080/'));
+    const ok = await httpRequest(port, 'GET', '/api/status');
+    assert.equal(ok.statusCode, 200);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('Static handler serves only the workbench allowlist, never repo internals', async () => {
+  const { server } = createByosServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    for (const p of ['/', '/index.html', '/style.css', '/app.js', '/trmnl_engine.js']) {
+      const res = await httpRequest(port, 'GET', p);
+      assert.equal(res.statusCode, 200, `${p} should serve`);
+    }
+    for (const p of ['/.git/config', '/.git/HEAD', '/server.js', '/test.js', '/package.json', '/README.md', '/plugins/orbital/full.liquid']) {
+      const res = await httpRequest(port, 'GET', p);
+      assert.equal(res.statusCode, 404, `${p} must not be served`);
+    }
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('POST /api/log enforces the byte cap with a clean 413', async () => {
+  const { server } = createByosServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    // 300,000 bytes of 3-byte UTF-8 chars: 100k chars, used to slip past the old char cap
+    const bigBody = 'x'.repeat(300000);
+    const res = await httpRequest(port, 'POST', '/api/log', {
+      'Content-Type': 'application/json', 'ID': 'AA:BB:CC:00:11:22'
+    }, bigBody);
+    assert.equal(res.statusCode, 413);
+    const ok = await httpRequest(port, 'POST', '/api/log', {
+      'Content-Type': 'application/json', 'ID': 'AA:BB:CC:00:11:22'
+    }, JSON.stringify({ log: { logs_array: [{ wifi_status: 'ok' }] } }));
+    assert.equal(ok.statusCode, 200);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('/api/bitmap serves PNG for mixed-case .PnG filename', async () => {
+  const { server } = createByosServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    const res = await httpRequest(port, 'GET', '/api/bitmap/horizon-corridor-atkinson-v1.PnG');
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.headers['content-type'], 'image/png');
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('/api/display whitelists screen and dither params in the advertised filename', () => {
+  const res = TrmnlEngine.handleApiDisplay({ ID: 'AA:BB:CC:00:11:22' }, {
+    baseUrl: 'http://localhost:8080', screenId: '../../etc', ditherMode: '<img>'
+  });
+  assert.equal(res.filename, 'horizon-corridor-atkinson-v1.bmp');
+  const res2 = TrmnlEngine.handleApiDisplay({ ID: 'AA:BB:CC:00:11:22' }, {
+    baseUrl: 'http://localhost:8080', screenId: 'orbital', ditherMode: 'bayer8'
+  });
+  assert.equal(res2.filename, 'horizon-orbital-bayer8-v1.bmp');
+});
+
+test('dither functions throw on undersized, empty, or non-finite input buffers', () => {
+  const half = new Uint8Array(800 * 240).fill(128);
+  assert.throws(() => TrmnlEngine.ditherThreshold(half, 800, 480), RangeError);
+  assert.throws(() => TrmnlEngine.ditherAtkinson(half, 800, 480), RangeError);
+  assert.throws(() => TrmnlEngine.ditherThreshold(new Uint8Array(0), 800, 480), RangeError);
+  const nanBuf = new Float32Array(800 * 480).fill(128);
+  nanBuf[7] = NaN;
+  assert.throws(() => TrmnlEngine.ditherFloydSteinberg(nanBuf, 800, 480), RangeError);
+  assert.throws(() => TrmnlEngine.ditherBayer(nanBuf, 800, 480), RangeError);
+  assert.throws(() => TrmnlEngine.ditherThreshold(new Uint8Array(100).fill(5), 0, 10), RangeError);
+});
+
+test('renderScreen repairs mistyped customData instead of crashing', () => {
+  const r1 = TrmnlEngine.renderScreen('corridor', { data: { departures: 'garbage' } });
+  assert.equal(r1.ditheredPixels.length, 800 * 480);
+  const r2 = TrmnlEngine.renderScreen('orbital', { data: { sunEvents: null } });
+  assert.equal(r2.ditheredPixels.length, 800 * 480);
+  const r3 = TrmnlEngine.renderScreen('corridor', { data: { departures: 5 } });
+  assert.equal(r3.ditheredPixels.length, 800 * 480);
+  const r4 = TrmnlEngine.renderScreen('corridor', { data: { departures: [{ line: 7, dest: null }] } });
+  assert.equal(r4.ditheredPixels.length, 800 * 480);
+});
+
+test('liquid templates use real trmnl.device vars, per-view loop limits, and else fallbacks', () => {
+  const lab = TrmnlEngine.generateLiquidTemplate('labbench', 'full');
+  assert.ok(lab.includes('trmnl.device.percent_charged'));
+  assert.ok(lab.includes('trmnl.device.wifi_strength'));
+  assert.ok(!lab.includes('trmnl.battery_voltage'));
+  const quad = TrmnlEngine.generateLiquidTemplate('corridor', 'quadrant');
+  assert.ok(quad.includes('limit:2'));
+  assert.ok(quad.includes('{% else %}'));
+  const full = TrmnlEngine.generateLiquidTemplate('orbital', 'full');
+  assert.ok(full.includes('limit:5'));
+});
+
+test('parseTrmnlHeaders clamps battery voltage to a finite range', () => {
+  assert.equal(TrmnlEngine.parseTrmnlHeaders({ 'Battery-Voltage': 'Infinity' }).batteryVoltage, 4.04);
+  assert.equal(TrmnlEngine.parseTrmnlHeaders({ 'Battery-Voltage': '99' }).batteryVoltage, 30);
+  assert.equal(TrmnlEngine.parseTrmnlHeaders({ 'Battery-Voltage': '-2' }).batteryVoltage, 0);
+  assert.equal(TrmnlEngine.parseTrmnlHeaders({ 'Battery-Voltage': 'junk' }).batteryVoltage, 4.04);
+});

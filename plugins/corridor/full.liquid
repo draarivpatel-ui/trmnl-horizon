@@ -22,7 +22,7 @@
         <tr><th>LINE</th><th>DESTINATION</th><th>TRK</th><th>STATUS</th><th>ETA</th></tr>
       </thead>
       <tbody>
-        {% for dep in departures %}
+        {% for dep in departures limit:5 %}
         <tr>
           <td><span class="label label--small label--inverted">{{ dep.line }}</span></td>
           <td><span class="title title--xxsmall">{{ dep.dest }}</span></td>
@@ -30,6 +30,8 @@
           <td><span class="label label--small">{{ dep.status }}</span></td>
           <td><span class="value value--xxsmall value--tnums">{{ dep.etaMin }}m</span></td>
         </tr>
+        {% else %}
+        <tr><td colspan="5"><span class="description">NO DEPARTURES ON THE BOARD</span></td></tr>
         {% endfor %}
       </tbody>
     </table>

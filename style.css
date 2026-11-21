@@ -301,6 +301,7 @@ body {
 
 .bezel-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
@@ -341,6 +342,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
   padding-bottom: 8px;
@@ -390,6 +392,7 @@ select {
 
 .protocol-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
 }
 
@@ -463,6 +466,8 @@ select {
   border-top: 1px dashed #8c887e;
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   font-family: var(--font-mono);
   font-size: 0.72rem;
 }
@@ -536,9 +541,9 @@ input[type="range"] {
 
 @media (max-width: 1120px) {
   .workbench-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .dual-subpanels {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }

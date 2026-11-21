@@ -433,6 +433,10 @@
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
+      img.onerror = () => {
+        bezelStatusText.textContent = 'IMAGE DECODE FAILED // SCREEN UNCHANGED';
+        e.target.value = '';
+      };
       img.onload = () => {
         const off = document.createElement('canvas');
         off.width = Engine.DISPLAY_WIDTH;
