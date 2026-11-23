@@ -9,8 +9,8 @@
   --border-hard: #1c1d1f;
   --accent-amber: #d95d24;
   --accent-green: #2c8a56;
-  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 }
 
 * {
@@ -65,13 +65,6 @@ body {
   font-weight: 700;
 }
 
-.subtitle {
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
-  color: #b7b3a8;
-  margin-top: 2px;
-}
-
 .topbar-metrics {
   display: flex;
   gap: 12px;
@@ -117,6 +110,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
 /* Screen Tabs & Action Bar */
@@ -327,8 +321,12 @@ body {
 /* Subpanels */
 .dual-subpanels {
   display: grid;
-  grid-template-columns: 1fr 1.15fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   gap: 16px;
+}
+
+.dual-subpanels > * {
+  min-width: 0;
 }
 
 .card-panel {
@@ -336,6 +334,7 @@ body {
   border: 2px solid var(--border-hard);
   box-shadow: 3px 3px 0 var(--border-hard);
   padding: 14px 16px;
+  min-width: 0;
 }
 
 .card-title-row {
@@ -425,7 +424,7 @@ select {
 /* Dithering Selector */
 .dither-selector {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -495,7 +494,7 @@ input[type="range"] {
 .power-telemetry-grid {
   margin-top: 12px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -539,11 +538,242 @@ input[type="range"] {
   gap: 8px;
 }
 
+/* ==========================================================================
+   E-Paper Dither Quality & ESP32-C3 Battery Frontier Lab
+   ========================================================================== */
+
+.epaper-lab {
+  max-width: 1520px;
+  margin: 20px auto 0;
+  padding: 0 20px;
+}
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.lab-grid > * {
+  min-width: 0;
+}
+
+.lab-matrix-panel {
+  grid-column: 1 / -1;
+}
+
+.matrix-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.matrix-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.matrix-table th {
+  text-align: left;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  border-bottom: 2px solid var(--border-hard);
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.matrix-table td {
+  padding: 5px 8px;
+  border-bottom: 1px dashed #b8b3a5;
+  white-space: nowrap;
+}
+
+.matrix-table tbody tr {
+  cursor: pointer;
+}
+
+.matrix-table tbody tr:hover {
+  background: #eae5d7;
+}
+
+.matrix-table tbody tr.active {
+  background: var(--ink-black);
+  color: var(--epaper-cream);
+}
+
+.matrix-table tbody tr.active .bmp-ok {
+  color: #8fe3b0;
+}
+
+.matrix-table .bmp-ok {
+  color: var(--accent-green);
+  font-weight: 700;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.chip-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin: 0 3px 0 6px;
+}
+
+.chip-label:first-child {
+  margin-left: 0;
+}
+
+.chip-btn {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 4px 9px;
+  border: 1.5px solid var(--border-hard);
+  background: #fff;
+  color: var(--ink-black);
+  cursor: pointer;
+}
+
+.chip-btn:hover {
+  background: #ebe6d8;
+}
+
+.chip-btn.active {
+  background: var(--ink-black);
+  color: var(--epaper-cream);
+}
+
+.lab-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #efebdd;
+  border: 2px solid var(--border-hard);
+}
+
+.chart-axis {
+  stroke: var(--border-hard);
+  stroke-width: 1.5;
+}
+
+.chart-grid-line {
+  stroke: #c9c4b4;
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.chart-axis-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--ink-muted);
+}
+
+.chart-series-line {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.chart-node {
+  cursor: pointer;
+}
+
+.chart-node .hit-target {
+  fill: transparent;
+  stroke: none;
+}
+
+.chart-node .node-dot {
+  stroke: var(--bg-card);
+  stroke-width: 1.5;
+}
+
+.chart-node:focus .node-dot,
+.chart-node.selected .node-dot {
+  stroke: var(--accent-amber);
+  stroke-width: 3;
+}
+
+.chart-marker-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--ink-black);
+  pointer-events: none;
+}
+
+.chart-scatter-dot {
+  cursor: pointer;
+  stroke: var(--bg-card);
+  stroke-width: 1.5;
+}
+
+.chart-scatter-dot.selected {
+  stroke: var(--accent-amber);
+  stroke-width: 3.5;
+}
+
+.chart-scatter-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.digest-badge {
+  font-size: 0.66rem;
+  letter-spacing: 0;
+}
+
+.brief-status-bar {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 7px 9px;
+  border: 1.5px solid var(--border-hard);
+  background: #eae5d7;
+  margin-bottom: 10px;
+}
+
+.brief-status-bar.ok {
+  background: #d9ecdd;
+  border-color: var(--accent-green);
+}
+
+.brief-status-bar.bad {
+  background: #f3d9cf;
+  border-color: var(--accent-amber);
+}
+
+.brief-actions,
+.selftest-row {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.selftest-out {
+  margin-top: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @media (max-width: 1120px) {
   .workbench-grid {
     grid-template-columns: minmax(0, 1fr);
   }
   .dual-subpanels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lab-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }

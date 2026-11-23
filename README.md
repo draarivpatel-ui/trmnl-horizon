@@ -4,7 +4,7 @@
 
 [![Live Workbench](https://img.shields.io/badge/Live_Workbench-aariv.me%2Ftrmnl--horizon-d95d24?style=flat-square)](https://aariv.me/trmnl-horizon/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2c8a56?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-46_Passing-141517?style=flat-square)](test.js)
+[![Tests](https://img.shields.io/badge/Tests-381_Passing-141517?style=flat-square)](test.js)
 
 **TRMNL-Horizon** is a complete self-hosted **BYOS (`Bring Your Own Server`)** backend, **800x480 1-bit & 2-bit e-paper dithering pipeline**, and **native `.liquid` plugin workbench** built for the **TRMNL 7.5" (UC8179 / ESP32-C3)** e-paper display ecosystem.
 
@@ -39,6 +39,14 @@
 4. **ESP32-C3 + UC8179 Power & Battery Life Physics Estimator**
    - Models deep-sleep current (`18 uA`), active Wi-Fi + TLS fetch + e-paper LUT refresh burst (`78 mA`), RSSI retransmission penalty (`-45 dBm` to `-88 dBm`), and LiPo state-of-charge curve (`1200 mAh`, `1800 mAh`, `2500 mAh`).
 
+5. **E-Paper Dither Quality & Battery Frontier Lab (`epaper-lab.js`)**
+   - **16-Combo Screen x Dither Comparator Matrix:** runs the real engine renderer across all 4 presets x 4 kernels (`atkinson`, `floyd-steinberg`, `bayer4`, `bayer8`) measuring ink coverage, horizontal RLE compressibility, packed-byte entropy, midtone PSNR, SSIM-like block fidelity, and exact `48,062`-byte BMP verification.
+   - **Interactive ESP32-C3 Autonomy Curve:** refresh-interval sweep (`60s` to `3600s`) across `1200`/`1800`/`2500 mAh` packs and `-45` to `-88 dBm` RSSI, with clickable keyboard-focusable SVG nodes synced to the workbench sliders.
+   - **Ink Density vs Fidelity Scatter:** clickable kernel markers for the active screen or all 16 combos.
+   - **Audited Hardware Proof Brief:** pure-JS FIPS 180-4 SHA-256 over cycle-safe canonical JSON, one cached canonical digest stamped identically on the UI badge, JSON, formula-injection-safe CSV, and Markdown exports, plus Verify Digest and Tamper Demo buttons.
+   - **Fail-Closed `#thlab=` Bookmark Codec:** strict parser with own-property guards, bounds clamping and hostile-input rejection; full workbench state restores across `Page.reload()`.
+   - **23 In-Page Deterministic Self-Tests** running the same invariants as the Node suite.
+
 ---
 
 ## Quick Start
@@ -48,7 +56,7 @@
 git clone https://github.com/draarivpatel-ui/trmnl-horizon.git
 cd trmnl-horizon
 
-# Run the 58-test verification suite (Node.js 18+ / 22+, zero npm dependencies required)
+# Run the 381-test verification suite (Node.js 18+ / 22+, zero npm dependencies required)
 node --test
 
 # Start the self-hosted TRMNL BYOS HTTP server & web workbench on port 8080
@@ -83,9 +91,10 @@ and `Access-Control-Allow-Origin: *` is sent on every response. `ID` and
 `Access-Token` headers are parsed and recorded but never validated, and the
 device `api_key` is derived deterministically from the claimed MAC. Run the
 server on localhost or a trusted LAN only; do not expose it to untrusted
-networks. The static file handler serves only the four workbench files
-(`index.html`, `style.css`, `app.js`, `trmnl_engine.js`). Repo internals such
-as `.git/`, `server.js` and `test.js` are not reachable over HTTP.
+networks. The static file handler serves only the five workbench files
+(`index.html`, `style.css`, `app.js`, `trmnl_engine.js`, `epaper-lab.js`).
+Repo internals such as `.git/`, `server.js`, `test.js` and
+`epaper-lab.test.js` are not reachable over HTTP.
 
 ## Repository Structure
 
@@ -93,10 +102,12 @@ as `.git/`, `server.js` and `test.js` are not reachable over HTTP.
 trmnl-horizon/
 ├── index.html                  # Interactive 800x480 E-Paper Hardware Workbench UI
 ├── style.css                   # Industrial matte e-paper & graphite bezel stylesheet
-├── app.js                      # Real-time canvas renderer, LUT flash, BMP/PNG/Liquid exporters
+├── app.js                      # Real-time canvas renderer, LUT flash, BMP/PNG/Liquid exporters, lab wiring
+├── epaper-lab.js               # UMD lab: comparator matrix, battery frontier, SHA-256 proof brief, codec
 ├── trmnl_engine.js             # UMD core: framebuffer, dithering, 1-bit BMP/PNG, BYOS handlers
 ├── server.js                   # Zero-dependency Node.js TRMNL BYOS HTTP server
-├── test.js                     # 58 unit & HTTP integration tests (node:test)
+├── test.js                     # 58 engine & HTTP integration tests (node:test)
+├── epaper-lab.test.js          # 323 lab, codec, brief & security tests (node:test)
 └── plugins/                    # Ready-to-paste TRMNL native .liquid plugin templates
     ├── corridor/               # full.liquid, half_horizontal.liquid, half_vertical.liquid, quadrant.liquid
     ├── orbital/

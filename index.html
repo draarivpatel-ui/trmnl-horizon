@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TRMNL-Horizon // Self-Hosted BYOS Server &amp; 800x480 1-Bit E-Paper Studio</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%231b1c1f'/%3E%3Crect x='2' y='2' width='12' height='9' fill='%23ece8de'/%3E%3Crect x='3' y='3' width='4' height='1' fill='%23111214'/%3E%3Crect x='3' y='5' width='7' height='1' fill='%23111214'/%3E%3Crect x='3' y='7' width='5' height='1' fill='%23111214'/%3E%3Crect x='2' y='12' width='3' height='2' fill='%23e85d26'/%3E%3C/svg%3E" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,7 +13,6 @@
       <span class="hardware-tag">TRMNL // 7.5" EPD 800x480</span>
       <div>
         <h1>TRMNL-HORIZON</h1>
-        <p class="subtitle">Self-Hosted BYOS Firmware Server, 1-Bit Dithering Engine &amp; Liquid Plugin Workbench</p>
       </div>
     </div>
     <div class="topbar-metrics">
@@ -244,7 +240,101 @@
     </aside>
   </main>
 
+  <!-- E-Paper Dither Quality & ESP32-C3 Battery Frontier Lab -->
+  <section class="epaper-lab" id="epaperLab">
+    <div class="lab-grid">
+
+      <!-- 16-Combo Screen x Dither Comparator Matrix -->
+      <div class="card-panel lab-matrix-panel">
+        <div class="card-title-row">
+          <h2>16-Combo Screen x Dither Comparator Matrix</h2>
+          <span class="badge-tag">REAL ENGINE</span>
+        </div>
+        <div class="matrix-wrap">
+          <table class="matrix-table" id="matrixTable">
+            <thead>
+              <tr>
+                <th>#</th><th>Screen</th><th>Dither</th><th>Ink %</th><th>H-Runs</th>
+                <th>RLE B</th><th>Entropy</th><th>PSNR dB</th><th>SSIM</th><th>BMP 48062</th>
+              </tr>
+            </thead>
+            <tbody id="matrixTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Interactive SVG Chart 1: ESP32-C3 + UC8179 Battery Autonomy Curve -->
+      <div class="card-panel">
+        <div class="card-title-row">
+          <h2>Battery Autonomy Curve</h2>
+          <span class="badge-tag" id="batteryChartBadge">1800 mAh // -58 dBm</span>
+        </div>
+        <div class="chip-row" id="batteryChipRow">
+          <span class="chip-label">RSSI</span>
+          <button class="chip-btn" data-rssi="-45">-45</button>
+          <button class="chip-btn" data-rssi="-58">-58</button>
+          <button class="chip-btn" data-rssi="-70">-70</button>
+          <button class="chip-btn" data-rssi="-80">-80</button>
+          <button class="chip-btn" data-rssi="-88">-88</button>
+          <span class="chip-label">PACK</span>
+          <button class="chip-btn" data-cap="1200">1200</button>
+          <button class="chip-btn" data-cap="1800">1800</button>
+          <button class="chip-btn" data-cap="2500">2500</button>
+        </div>
+        <svg id="batteryChart" class="lab-chart" viewBox="0 0 640 300" role="img"
+          aria-label="ESP32-C3 battery autonomy versus refresh interval"></svg>
+      </div>
+
+      <!-- Interactive SVG Chart 2: Ink Density vs Fidelity Scatter -->
+      <div class="card-panel">
+        <div class="card-title-row">
+          <h2>Ink Density vs Fidelity Tradeoff</h2>
+          <span class="badge-tag" id="scatterBadge">corridor</span>
+        </div>
+        <div class="chip-row" id="scatterChipRow">
+          <span class="chip-label">COMBOS</span>
+          <button class="chip-btn active" data-scope="screen">Active screen</button>
+          <button class="chip-btn" data-scope="all">All 16</button>
+        </div>
+        <svg id="fidelityChart" class="lab-chart" viewBox="0 0 640 300" role="img"
+          aria-label="Ink coverage versus SSIM fidelity scatter"></svg>
+      </div>
+
+      <!-- Audited Hardware Proof Brief Exporter -->
+      <div class="card-panel">
+        <div class="card-title-row">
+          <h2>Audited Hardware Proof Brief</h2>
+          <span class="badge-tag digest-badge" id="labDigestBadge">SHA-256 ...</span>
+        </div>
+        <div class="brief-status-bar">
+          <span id="briefStatus">Digest state: computed on demand</span>
+        </div>
+        <div class="liquid-action-row brief-actions">
+          <button id="btnVerifyDigest" class="btn btn-secondary">Verify Digest</button>
+          <button id="btnTamperDemo" class="btn btn-secondary">Tamper Demo</button>
+          <button id="btnBriefJson" class="btn btn-secondary">Export .JSON</button>
+          <button id="btnBriefCsv" class="btn btn-secondary">Export .CSV</button>
+          <button id="btnBriefMd" class="btn btn-primary">Export .MD</button>
+        </div>
+      </div>
+
+      <!-- In-Page Deterministic Self-Tests -->
+      <div class="card-panel">
+        <div class="card-title-row">
+          <h2>Deterministic Self-Tests</h2>
+          <span class="badge-tag" id="selfTestBadge">IDLE</span>
+        </div>
+        <div class="liquid-action-row selftest-row">
+          <button id="btnRunSelfTests" class="btn btn-primary">Run In-Page Checks</button>
+        </div>
+        <pre class="code-box selftest-out" id="selfTestOut">Self-tests idle.</pre>
+      </div>
+
+    </div>
+  </section>
+
   <script src="trmnl_engine.js"></script>
+  <script src="epaper-lab.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

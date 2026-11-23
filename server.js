@@ -231,13 +231,14 @@ function createByosServer(options = {}) {
 
     // 7. Static files for Interactive Workbench UI: explicit allowlist only.
     // Serving the repo root raw exposed .git/ (VCS internals, remotes), source
-    // and any file dropped in later; only the four workbench files are public.
+    // and any file dropped in later; only the five workbench files are public.
     const STATIC_FILES = {
       '/': 'index.html',
       '/index.html': 'index.html',
       '/style.css': 'style.css',
       '/app.js': 'app.js',
-      '/trmnl_engine.js': 'trmnl_engine.js'
+      '/trmnl_engine.js': 'trmnl_engine.js',
+      '/epaper-lab.js': 'epaper-lab.js'
     };
     const staticName = STATIC_FILES[pathname];
     if (!staticName) {
