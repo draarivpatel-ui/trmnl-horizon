@@ -726,6 +726,19 @@ test('generateLiquidTemplate escapes quotes and backslashes in custom data defau
   assert.ok(nested.includes('default: "06:1\\"2"'));
 });
 
+test('generateLiquidTemplate escapes newlines, carriage returns and tabs in custom data', () => {
+  const liquid = TrmnlEngine.generateLiquidTemplate('corridor', 'full', {
+    stationName: 'PENN\nCONCOURSE',
+    activeAlerts: 'TRACK\r\n4\tBOARDING'
+  });
+  assert.ok(liquid.includes('default: "PENN\\nCONCOURSE"'));
+  assert.ok(liquid.includes('default: "TRACK\\r\\n4\\tBOARDING"'));
+  // Every quoted default literal stays on a single line so the Liquid parse holds.
+  for (const m of liquid.matchAll(/default: "((?:\\.|[^"\\])*)"/g)) {
+    assert.ok(!/[\n\r\t]/.test(m[1]), `raw control char inside default literal: ${m[1]}`);
+  }
+});
+
 test('parseTrmnlHeaders clamps refresh rate to a sane range', () => {
   assert.equal(TrmnlEngine.parseTrmnlHeaders({ 'Refresh-Rate': '-5' }).refreshRate, 15);
   assert.equal(TrmnlEngine.parseTrmnlHeaders({ 'Refresh-Rate': '999999' }).refreshRate, 86400);

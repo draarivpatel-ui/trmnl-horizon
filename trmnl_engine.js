@@ -1495,7 +1495,9 @@
 
   // Custom data lands inside double-quoted Liquid `default:` literals, so
   // backslashes and double quotes in user strings must be escaped or the
-  // exported template breaks.
+  // exported template breaks. Raw newlines, carriage returns and tabs are
+  // escaped too: a literal CR/LF/TAB inside a quoted Liquid string makes the
+  // template fail to parse on the server.
   function escapeLiquidData(data) {
     if (Array.isArray(data)) return data.map(escapeLiquidData);
     if (data && typeof data === 'object') {
@@ -1503,7 +1505,10 @@
       for (const [k, v] of Object.entries(data)) out[k] = escapeLiquidData(v);
       return out;
     }
-    return typeof data === 'string' ? data.replace(/\\/g, '\\\\').replace(/"/g, '\\"') : data;
+    return typeof data === 'string'
+      ? data.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+          .replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
+      : data;
   }
 
   function generateLiquidTemplate(screenId = 'corridor', viewSize = 'full', customData = {}) {
