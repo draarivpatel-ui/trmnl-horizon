@@ -4,7 +4,7 @@
 
 [![Live Workbench](https://img.shields.io/badge/Live_Workbench-aariv.me%2Ftrmnl--horizon-d95d24?style=flat-square)](https://aariv.me/trmnl-horizon/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2c8a56?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-382_Passing-141517?style=flat-square)](test.js)
+[![Tests](https://img.shields.io/badge/Tests-384_Passing-141517?style=flat-square)](test.js)
 
 **TRMNL-Horizon** is a complete self-hosted **BYOS (`Bring Your Own Server`)** backend, **800x480 1-bit & 2-bit e-paper dithering pipeline**, and **native `.liquid` plugin workbench** built for the **TRMNL 7.5" (UC8179 / ESP32-C3)** e-paper display ecosystem.
 
@@ -56,7 +56,7 @@
 git clone https://github.com/draarivpatel-ui/trmnl-horizon.git
 cd trmnl-horizon
 
-# Run the 382-test verification suite (Node.js 18+ / 22+, zero npm dependencies required)
+# Run the 384-test verification suite (Node.js 18+ / 22+, zero npm dependencies required)
 node --test
 
 # Start the self-hosted TRMNL BYOS HTTP server & web workbench on port 8080
@@ -107,7 +107,7 @@ trmnl-horizon/
 ├── trmnl_engine.js             # UMD core: framebuffer, dithering, 1-bit BMP/PNG, BYOS handlers
 ├── server.js                   # Zero-dependency Node.js TRMNL BYOS HTTP server
 ├── test.js                     # 59 engine & HTTP integration tests (node:test)
-├── epaper-lab.test.js          # 323 lab, codec, brief & security tests (node:test)
+├── epaper-lab.test.js          # 325 lab, codec, brief & security tests (node:test)
 └── plugins/                    # Ready-to-paste TRMNL native .liquid plugin templates
     ├── corridor/               # full.liquid, half_horizontal.liquid, half_vertical.liquid, quadrant.liquid
     ├── orbital/

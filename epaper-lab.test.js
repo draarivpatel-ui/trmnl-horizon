@@ -369,6 +369,14 @@ test('inkCoverage counts quantized black pixels exactly', () => {
   assert.equal(cov.inkPct, 50);
 });
 
+test('inkCoverage reports zero ink instead of NaN for an empty buffer', () => {
+  const cov = Lab.inkCoverage([]);
+  assert.equal(cov.blackPx, 0);
+  assert.equal(cov.whitePx, 0);
+  assert.equal(cov.inkPct, 0);
+  assert.ok(Number.isFinite(cov.inkPct));
+});
+
 test('runLengthStats counts horizontal runs and transitions', () => {
   const buf = new Uint8Array([0, 0, 255, 255, 0, 0, 255, 255]);
   const r = Lab.runLengthStats(buf, 8, 1);
@@ -887,6 +895,16 @@ test('index.html loads epaper-lab.js between engine and app', () => {
 test('index.html makes no external http/https resource requests', () => {
   assert.ok(!/src="https?:/i.test(indexHtml), 'external script src found');
   assert.ok(!/href="https?:/i.test(indexHtml), 'external link href found');
+});
+
+test('style.css ships a keyboard focus ring and a reduced-motion override', () => {
+  assert.match(styleCss, /:focus-visible/);
+  for (const selector of ['a', 'button', 'input', 'select', 'textarea', '[tabindex]']) {
+    assert.ok(styleCss.includes(selector + ':focus-visible'), `missing ${selector}:focus-visible ring`);
+  }
+  assert.match(styleCss, /@media \(prefers-reduced-motion:\s*reduce\)/);
+  // The LUT refresh is a bright full-screen flash; reduced motion must skip it.
+  assert.match(styleCss, /\.lut-flash-overlay\.flashing\s*\{\s*animation:\s*none/);
 });
 
 test('style.css guards grid tracks with minmax(0, ...) and children min-width: 0', () => {

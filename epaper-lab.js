@@ -251,10 +251,12 @@
       if (ditheredPixels[i] < 128) black++;
     }
     const total = ditheredPixels.length;
+    // An empty buffer has no ink and no valid percentage; report zero instead
+    // of the NaN that 0/0 would put into the brief and every export.
     return {
       blackPx: black,
       whitePx: total - black,
-      inkPct: Number(((black / total) * 100).toFixed(2))
+      inkPct: total === 0 ? 0 : Number(((black / total) * 100).toFixed(2))
     };
   }
 

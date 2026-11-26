@@ -777,3 +777,30 @@ input[type="range"] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Keyboard focus ring: visible for tab navigation, absent for pointer clicks. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--accent-amber);
+  outline-offset: 2px;
+}
+
+/* The LUT refresh models a real e-paper full-waveform inversion: a bright
+   full-screen flash. Readers who ask for reduced motion get the same state
+   change without the flash, and no easing on hover or tabs. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .lut-flash-overlay.flashing {
+    animation: none;
+  }
+}
