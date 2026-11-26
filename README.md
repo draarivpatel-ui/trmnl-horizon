@@ -56,7 +56,7 @@
 git clone https://github.com/draarivpatel-ui/trmnl-horizon.git
 cd trmnl-horizon
 
-# Run the 384-test verification suite (Node.js 18+ / 22+, zero npm dependencies required)
+# Run the 387-test verification suite (Node.js 18+ / 22+, zero npm dependencies required)
 node --test
 
 # Start the self-hosted TRMNL BYOS HTTP server & web workbench on port 8080
@@ -106,6 +106,7 @@ trmnl-horizon/
 ├── epaper-lab.js               # UMD lab: comparator matrix, battery frontier, SHA-256 proof brief, codec
 ├── trmnl_engine.js             # UMD core: framebuffer, dithering, 1-bit BMP/PNG, BYOS handlers
 ├── server.js                   # Zero-dependency Node.js TRMNL BYOS HTTP server
+├── batch6-hardening.test.mjs   # 3 hardening regression tests (node:test)
 ├── test.js                     # 59 engine & HTTP integration tests (node:test)
 ├── epaper-lab.test.js          # 325 lab, codec, brief & security tests (node:test)
 └── plugins/                    # Ready-to-paste TRMNL native .liquid plugin templates

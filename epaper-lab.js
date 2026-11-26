@@ -539,8 +539,17 @@
 
   /* ---------- Audited hardware proof brief ---------- */
 
+  function hasBlockedKey(value, depth) {
+    if (!value || typeof value !== 'object' || depth > 64) return false;
+    for (const k of Object.keys(value)) {
+      if (BLOCKED_STATE_KEYS.indexOf(k) >= 0) return true;
+      if (hasBlockedKey(value[k], depth + 1)) return true;
+    }
+    return false;
+  }
+
   function stripDigest(brief) {
-    const out = {};
+    const out = Object.create(null);
     for (const k of Object.keys(brief)) {
       if (k !== 'auditDigest' && Object.prototype.hasOwnProperty.call(brief, k)) {
         out[k] = brief[k];
@@ -624,6 +633,9 @@
     if (!brief || typeof brief !== 'object' || Array.isArray(brief)) {
       return { ok: false, reason: 'MALFORMED_BRIEF', expectedDigest: null, actualDigest: null };
     }
+    if (hasBlockedKey(brief, 0)) {
+      return { ok: false, reason: 'HOSTILE_KEYS', expectedDigest: null, actualDigest: null };
+    }
     if (typeof brief.auditDigest !== 'string' || !/^[0-9a-f]{64}$/.test(brief.auditDigest)) {
       return {
         ok: false,
@@ -668,7 +680,10 @@
 
   function csvEscapeCell(value) {
     let s = value === null || value === undefined ? '' : String(value);
-    const formulaStart = /^[=+\-@\t\r]/.test(s);
+    const lead = (/^[\s\p{Cf}\p{Cc}]*/u.exec(s) || [''])[0];
+    const first = s.charAt(lead.length);
+    const plainNumber = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(s.slice(lead.length));
+    const formulaStart = lead.length > 0 || (first !== '' && '=+-@'.indexOf(first) !== -1 && !(first === '-' && plainNumber));
     const needsQuote = /[",\n\r]/.test(s);
     if (formulaStart) s = "'" + s;
     if (needsQuote) s = '"' + s.replace(/"/g, '""') + '"';

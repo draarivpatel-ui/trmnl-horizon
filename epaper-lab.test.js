@@ -522,7 +522,7 @@ test('JSON export round-trips through JSON.parse preserving the digest', () => {
 // ============================================================================
 
 test('csvEscapeCell prefixes = + - @ tab and CR leads with an apostrophe', () => {
-  for (const h of ['=SUM(1)', '+x', '-10', '@cmd', '\t=1', '\r=2']) {
+  for (const h of ['=SUM(1)', '+x', '-10x', '@cmd', '\t=1', '\r=2']) {
     const esc = Lab.csvEscapeCell(h);
     const core = esc.startsWith('"') ? esc.slice(1, -1) : esc;
     assert.ok(core.startsWith("'"), `cell ${JSON.stringify(h)} not prefixed`);
@@ -530,6 +530,7 @@ test('csvEscapeCell prefixes = + - @ tab and CR leads with an apostrophe', () =>
 });
 
 test('csvEscapeCell leaves plain values untouched', () => {
+  assert.equal(Lab.csvEscapeCell('-10'), '-10');
   assert.equal(Lab.csvEscapeCell('corridor'), 'corridor');
   assert.equal(Lab.csvEscapeCell(42), '42');
   assert.equal(Lab.csvEscapeCell(null), '');

@@ -871,6 +871,10 @@
 
   // options.data is library-API user input: a mistyped field (departures as a
   // string, sunEvents: null) crashed the renderers instead of falling back.
+  function cpSlice(value, count) {
+    return Array.from(String(value)).slice(0, count).join("");
+  }
+
   function coerceScreenData(d, defaults) {
     for (const key of Object.keys(defaults)) {
       const dv = defaults[key];
@@ -936,7 +940,7 @@
       // Line badge
       fb.drawBadge(row.line, 22, ry + 12, 1, idx === 0, 5, 5);
       // Destination
-      fb.drawText(row.dest.slice(0, 16), 92, ry + 11, 2, 0, 1);
+      fb.drawText(cpSlice(row.dest, 16), 92, ry + 11, 2, 0, 1);
       fb.drawText(`SCHED ${row.sched} // ${row.cars} CARS`, 92, ry + 32, 1, 70, 1);
 
       // Track box
@@ -1193,7 +1197,7 @@
       if (item.done) {
         fb.fillRect(448, cy + 4, 8, 8, 0);
       }
-      fb.drawText(item.task.slice(0, 44), 468, cy + 4, 1, 0, 1);
+      fb.drawText(cpSlice(item.task, 44), 468, cy + 4, 1, 0, 1);
     });
 
     drawFooterBar(
@@ -1246,7 +1250,7 @@
         fb.fillRect(cx + 2, cy + 2, cellW - 6, 22, 235);
       }
       fb.drawText(String(m + 1).padStart(2, '0'), cx + 12, cy + 34, 1, 70, 1);
-      const bol = (d.bols[m] || 'DHA').slice(0, 4);
+      const bol = cpSlice(d.bols[m] || 'DHA', 4);
       fb.drawText(bol, cx + 6, cy + 58, 1, 0, 1);
       // Shaded accent bar at bottom of cell
       const accentGray = isVibhagStart ? 30 : 165;
